@@ -1,5 +1,6 @@
 {
   "plan": "max5x",
+  "startWithWindows": true,
   "sessionTokenBudget": 630000000,
   "weeklyTokenBudget": 3450000000,
   "weeklyAnchorIso": null,

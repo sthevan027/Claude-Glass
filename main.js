@@ -23,6 +23,7 @@ let config
 function loadConfig() {
   const defaults = {
     plan: 'max5x',
+    startWithWindows: true,
     sessionTokenBudget: 630000000,
     weeklyTokenBudget: 3450000000,
     weeklyAnchorIso: null,
@@ -220,16 +221,25 @@ ipcMain.on('save-config', (_e, patch) => {
   config = loadConfig()
   armed.clear()
   if (win && !win.isDestroyed()) win.webContents.send('config', config)
+  applyAutoStart()
 })
 
 ipcMain.on('quit', () => app.quit())
 
+// Respeita a escolha da pessoa em vez de re-registrar a cada abertura.
+// Padrao ligado (config.startWithWindows), mas desmarcar realmente desliga.
+function applyAutoStart() {
+  if (!app.isPackaged) return // em dev nao mexe na inicializacao do Windows
+  app.setLoginItemSettings({
+    openAtLogin: config.startWithWindows !== false,
+    openAsHidden: false,
+  })
+}
+
 app.whenReady().then(() => {
   if (process.platform === 'win32') app.setAppUserModelId('com.datasystem.claude-glass')
-  createWindow()
-  if (app.isPackaged) {
-    app.setLoginItemSettings({ openAtLogin: true, openAsHidden: false })
-  }
+  createWindow() // define `config`
+  applyAutoStart()
 })
 
 app.on('window-all-closed', () => {
