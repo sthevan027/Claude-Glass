@@ -600,9 +600,9 @@ body.collapsed #card {
 body.collapsed #stage {
   margin-top: 9px;
 }
-/* collapsed: drag the widget by the pet */
+/* collapsed: sempre fixo no canto, nao arrasta pelo pet */
 body.collapsed #pet {
-  -webkit-app-region: drag;
+  -webkit-app-region: no-drag;
 }
 /* hide minimize while settings are open (toggling it bugs the layout) */
 body.settings-open #min {

@@ -87,12 +87,14 @@ function clampToWorkArea() {
   if (x !== b.x || y !== b.y) win.setBounds({ x, y, width: b.width, height: b.height })
 }
 
-// Posicao ancorada no canto inferior direito da area util, colada acima da barra de tarefas.
+// Posicao ancorada no canto inferior direito da area util, colada (sem vao) acima da barra de tarefas.
+const EDGE_MARGIN_X = 20
+const EDGE_MARGIN_Y = 0
 function anchoredPosition(width, height) {
   const wa = currentWorkArea()
   return {
-    x: wa.x + wa.width - width - 20,
-    y: wa.y + wa.height - height - 20,
+    x: wa.x + wa.width - width - EDGE_MARGIN_X,
+    y: wa.y + wa.height - height - EDGE_MARGIN_Y,
   }
 }
 
@@ -110,10 +112,7 @@ function createWindow() {
   config = loadConfig()
   const W = 290
   const H = 580
-  const { x, y } = (() => {
-    const wa = screen.getPrimaryDisplay().workArea
-    return { x: wa.x + wa.width - W - 20, y: wa.y + wa.height - H - 20 }
-  })()
+  const { x, y } = anchoredPosition(W, H)
 
   win = new BrowserWindow({
     width: W,
@@ -168,8 +167,11 @@ function createWindow() {
 
 ipcMain.on('resize', (_e, w, h) => {
   if (!win || win.isDestroyed()) return
-  const width = Math.max(280, Math.round(w))
-  const height = Math.max(200, Math.round(h))
+  // Piso baixo o bastante para o card colapsado (140px): um piso de 280 forcava
+  // a janela a ficar bem mais larga que o pet minimizado, deixando-o "flutuando"
+  // longe da quina em vez de colado nela.
+  const width = Math.max(100, Math.round(w))
+  const height = Math.max(100, Math.round(h))
   win.setContentSize(width, height)
   const { x, y } = anchoredPosition(width, height)
   win.setPosition(x, y)
