@@ -33,6 +33,7 @@ function loadConfig() {
     pollIntervalMs: 4000,
     activeThresholdMs: 20000,
     sleepThresholdMs: 300000,
+    lockPosition: false,
   }
   for (const p of [EXTERNAL_CONFIG, path.join(__dirname, 'config.json')]) {
     try {
@@ -69,17 +70,56 @@ function checkAlerts(config, d) {
   }
 }
 
+// Area util da tela (exclui a barra de tarefas), do monitor onde a janela esta.
+function currentWorkArea() {
+  const display = win && !win.isDestroyed() ? screen.getDisplayMatching(win.getBounds()) : screen.getPrimaryDisplay()
+  return display.workArea
+}
+
+// Empurra a janela de volta para dentro da area util caso ela tente ficar
+// sobre/embaixo da barra de tarefas (ou fora da tela, em outro monitor).
+function clampToWorkArea() {
+  if (!win || win.isDestroyed()) return
+  const wa = currentWorkArea()
+  const b = win.getBounds()
+  const x = Math.min(Math.max(b.x, wa.x), wa.x + wa.width - b.width)
+  const y = Math.min(Math.max(b.y, wa.y), wa.y + wa.height - b.height)
+  if (x !== b.x || y !== b.y) win.setBounds({ x, y, width: b.width, height: b.height })
+}
+
+// Posicao ancorada no canto inferior direito da area util, colada acima da barra de tarefas.
+function anchoredPosition(width, height) {
+  const wa = currentWorkArea()
+  return {
+    x: wa.x + wa.width - width - 20,
+    y: wa.y + wa.height - height - 20,
+  }
+}
+
+function applyLockPosition() {
+  if (!win || win.isDestroyed()) return
+  win.setMovable(!config.lockPosition)
+  if (config.lockPosition) {
+    const { width, height } = win.getBounds()
+    const { x, y } = anchoredPosition(width, height)
+    win.setBounds({ x, y, width, height })
+  }
+}
+
 function createWindow() {
   config = loadConfig()
-  const { workAreaSize } = screen.getPrimaryDisplay()
   const W = 290
   const H = 580
+  const { x, y } = (() => {
+    const wa = screen.getPrimaryDisplay().workArea
+    return { x: wa.x + wa.width - W - 20, y: wa.y + wa.height - H - 20 }
+  })()
 
   win = new BrowserWindow({
     width: W,
     height: H,
-    x: workAreaSize.width - W - 20,
-    y: workAreaSize.height - H - 20,
+    x,
+    y,
     frame: false,
     transparent: true,
     backgroundColor: '#00000000',
@@ -88,6 +128,7 @@ function createWindow() {
     skipTaskbar: true,
     hasShadow: false,
     fullscreenable: false,
+    movable: !config.lockPosition,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -95,8 +136,14 @@ function createWindow() {
     },
   })
 
-  win.setAlwaysOnTop(true, 'floating')
+  win.setAlwaysOnTop(true, 'screen-saver')
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'))
+
+  // Nunca deixa a janela ficar sobre/embaixo da barra de tarefas, mesmo durante
+  // um arraste em andamento, nem sair da area util ao trocar de monitor/resolucao.
+  win.on('move', clampToWorkArea)
+  screen.on('display-metrics-changed', clampToWorkArea)
+  applyLockPosition()
 
   const tick = () => {
     if (!win || win.isDestroyed()) return
@@ -124,8 +171,8 @@ ipcMain.on('resize', (_e, w, h) => {
   const width = Math.max(280, Math.round(w))
   const height = Math.max(200, Math.round(h))
   win.setContentSize(width, height)
-  const { workAreaSize } = screen.getPrimaryDisplay()
-  win.setPosition(workAreaSize.width - width - 20, workAreaSize.height - height - 20)
+  const { x, y } = anchoredPosition(width, height)
+  win.setPosition(x, y)
 })
 
 ipcMain.on('open-usage', () => shell.openExternal('https://claude.ai/settings/usage'))
@@ -222,6 +269,7 @@ ipcMain.on('save-config', (_e, patch) => {
   armed.clear()
   if (win && !win.isDestroyed()) win.webContents.send('config', config)
   applyAutoStart()
+  applyLockPosition()
 })
 
 ipcMain.on('quit', () => app.quit())

@@ -650,6 +650,7 @@ let settingsBaseline = null
 function snapshotSettings() {
   return JSON.stringify({
     autostart: el('set-autostart').checked,
+    lock: el('set-lock').checked,
     alerts: el('set-alerts').checked,
     t1: el('set-t1').value,
     t2: el('set-t2').value,
@@ -667,6 +668,7 @@ function clearSaveDirty() {
 function populateSettings() {
   const c = currentConfig || {}
   el('set-autostart').checked = c.startWithWindows !== false
+  el('set-lock').checked = c.lockPosition === true
   el('set-alerts').checked = c.alerts !== false
   const th = c.alertThresholds || [80, 95]
   el('set-t1').value = th[0] != null ? th[0] : 80
@@ -695,7 +697,7 @@ for (const b of document.querySelectorAll('.num-btn')) {
   })
 }
 // light up Save whenever an editable field changes
-for (const id of ['set-autostart', 'set-alerts', 'set-t1', 'set-t2', 'set-fire']) {
+for (const id of ['set-autostart', 'set-lock', 'set-alerts', 'set-t1', 'set-t2', 'set-fire']) {
   el(id).addEventListener('input', refreshSaveDirty)
   el(id).addEventListener('change', refreshSaveDirty)
 }
@@ -709,6 +711,7 @@ el('set-save').addEventListener('click', () => {
   const fire = num('set-fire')
   window.api.saveConfig({
     startWithWindows: el('set-autostart').checked,
+    lockPosition: el('set-lock').checked,
     alerts: el('set-alerts').checked,
     alertThresholds: [num('set-t1'), num('set-t2')]
       .filter((n) => n >= 1 && n <= 100)
