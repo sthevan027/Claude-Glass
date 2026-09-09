@@ -28,7 +28,8 @@
       "usage.js",
       "auth.js",
       "config.json",
-      "renderer/**"
+      "renderer/**",
+      "assets/**"
     ],
     "win": {
       "target": "zip"

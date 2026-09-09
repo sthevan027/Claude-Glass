@@ -109,6 +109,17 @@ Abra pela engrenagem ⚙.
 | Limites de alerta (%) | Os dois níveis que disparam notificação |
 | Pegar fogo em (%) | A partir de quanto o pet pega fogo |
 
+## Ícone na bandeja
+
+O Claude Glass fica com um ícone fixo na bandeja do sistema (perto do
+relógio), que muda de cor conforme a atividade — colorido quando o Claude
+Code está trabalhando, cinza quando está parado. Clique no ícone pra trazer o
+widget de volta pra frente.
+
+Clicar no **×** do widget só o esconde (ele continua rodando na bandeja,
+igual Slack/Discord). Pra sair de verdade, clique com o botão direito no
+ícone da bandeja e escolha **Sair**.
+
 ## Desinstalação
 
 O app não usa instalador, então não aparece em "Adicionar ou remover programas".
@@ -116,7 +127,8 @@ O app não usa instalador, então não aparece em "Adicionar ou remover programa
 1. **Desmarque "Iniciar com o Windows"** nas Configurações antes de apagar
    (senão a entrada fica órfã). Se já apagou, remova o atalho em
    `Win+R` → `shell:startup`.
-2. Feche o widget no **×**
+2. Clique com o botão direito no ícone da bandeja e escolha **Sair** (o **×**
+   do widget só esconde — não encerra o processo)
 3. Apague a pasta onde você extraiu o app
 4. Apague os dados: `%USERPROFILE%\.claude-usage-monitor` (o token) e
    `%USERPROFILE%\.claude-glass` (suas configurações)

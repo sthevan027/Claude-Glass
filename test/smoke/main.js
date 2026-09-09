@@ -10,7 +10,7 @@ let gotResize = false
 let savedConfig = null
 ipcMain.on('resize', () => (gotResize = true))
 ipcMain.on('save-config', (_e, patch) => (savedConfig = patch))
-ipcMain.on('quit', () => {})
+ipcMain.on('hide-window', () => {})
 ipcMain.on('open-usage', () => {})
 ipcMain.on('auth-start', () => {})
 
@@ -51,7 +51,7 @@ app.whenReady().then(async () => {
   check(
     'window.api tem todos os metodos usados',
     await js(
-      `['onUsage','onConfig','onDebugState','quit','resize'].every(k => typeof window.api[k] === 'function')`,
+      `['onUsage','onConfig','onDebugState','hide','resize'].every(k => typeof window.api[k] === 'function')`,
     ),
   )
 

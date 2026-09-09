@@ -112,6 +112,16 @@ Open with the gear ⚙.
 | Limites de alerta (%) | The two levels that trigger a notification |
 | Pegar fogo em (%) | Usage level at which the pet catches fire |
 
+## Tray icon
+
+Claude Glass keeps a small icon in the system tray, which changes color with
+activity — lit up while Claude Code is working, gray while idle. Click it to
+bring the widget back to the front.
+
+Clicking the widget's **×** only hides it (it keeps running in the tray, same
+as Slack/Discord). To actually quit, right-click the tray icon and choose
+**Sair** (Exit).
+
 ## Uninstalling
 
 The app has no installer, so it won't appear under "Add or remove programs".
@@ -119,7 +129,8 @@ The app has no installer, so it won't appear under "Add or remove programs".
 1. **Uncheck "Iniciar com o Windows"** in Settings before deleting anything,
    or the startup entry is left orphaned. If you already deleted it, remove the
    shortcut from `Win+R` → `shell:startup`.
-2. Close the widget with the **×**
+2. Right-click the tray icon and choose **Sair** (the widget's **×** only
+   hides it — it doesn't end the process)
 3. Delete the folder you extracted the app into
 4. Delete the data: `%USERPROFILE%\.claude-usage-monitor` (the token) and
    `%USERPROFILE%\.claude-glass` (your settings)

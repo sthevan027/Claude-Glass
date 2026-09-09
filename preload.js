@@ -15,5 +15,5 @@ contextBridge.exposeInMainWorld('api', {
   saveConfig: (patch) => ipcRenderer.send('save-config', patch),
   resize: (w, h) => ipcRenderer.send('resize', w, h),
   openUsage: () => ipcRenderer.send('open-usage'),
-  quit: () => ipcRenderer.send('quit'),
+  hide: () => ipcRenderer.send('hide-window'),
 })

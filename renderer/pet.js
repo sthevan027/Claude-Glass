@@ -624,7 +624,7 @@ window.api.onAuthResult((r) => {
   fitSize()
 })
 
-el('close').addEventListener('click', () => window.api.quit())
+el('close').addEventListener('click', () => window.api.hide())
 el('usage').addEventListener('click', () => window.api.openUsage())
 
 // account login (browser flow)

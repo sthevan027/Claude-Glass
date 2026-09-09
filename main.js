@@ -1,9 +1,17 @@
-const { app, BrowserWindow, ipcMain, screen, Notification, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, screen, Notification, shell, Tray, Menu, nativeImage } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 const { getUsage } = require('./usage')
 const auth = require('./auth')
+
+// So o limite de heap do V8: a UI e minima (um SVG + pouco DOM), nao precisa
+// do heap gigante que o V8 reserva por padrao. Cortou ~46MB (511 -> 465MB)
+// num teste controlado, sem afetar nada visual. Tem que vir antes de
+// app.whenReady(). (Testado tambem desativar GPU — piorou: a janela
+// transparente forca composicao por software, que empurra o trabalho pro
+// processo principal em vez de reduzir o total.)
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=64')
 
 const DATA_DIR = process.env.CLAUDE_CONFIG_DIR
   ? path.join(process.env.CLAUDE_CONFIG_DIR, 'claude-glass')
@@ -19,6 +27,57 @@ const EXTERNAL_CONFIG = path.join(DATA_DIR, 'config.json')
 let win
 let pollTimer
 let config
+let tray
+let trayWorking = null
+let quitting = false
+
+const TRAY_ICON_WORKING = path.join(__dirname, 'assets', 'tray-working.png')
+const TRAY_ICON_IDLE = path.join(__dirname, 'assets', 'tray-idle.png')
+
+function createTray() {
+  tray = new Tray(nativeImage.createFromPath(TRAY_ICON_IDLE))
+  tray.setToolTip('Claude Glass')
+  // Clique alterna: esconde se estiver aberto, mostra se estiver escondido.
+  tray.on('click', () => {
+    if (!win || win.isDestroyed()) return
+    if (win.isVisible()) {
+      win.hide()
+    } else {
+      win.show()
+      win.focus()
+    }
+  })
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Mostrar',
+        click: () => {
+          if (!win || win.isDestroyed()) return
+          win.show()
+          win.focus()
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Sair',
+        click: () => {
+          quitting = true
+          app.quit()
+        },
+      },
+    ])
+  )
+}
+
+// So troca a imagem quando o estado muda de verdade, pra nao ficar
+// re-setando o icone a cada tick do poll (4s por padrao).
+function updateTrayIcon(active) {
+  if (!tray) return
+  const working = !!active
+  if (working === trayWorking) return
+  trayWorking = working
+  tray.setImage(nativeImage.createFromPath(working ? TRAY_ICON_WORKING : TRAY_ICON_IDLE))
+}
 
 function loadConfig() {
   const defaults = {
@@ -144,12 +203,21 @@ function createWindow() {
   screen.on('display-metrics-changed', clampToWorkArea)
   applyLockPosition()
 
+  // O X so esconde pra bandeja (igual Slack/Discord) — sair de verdade e
+  // pelo menu do icone da bandeja ("Sair") ou app.quit() marcando `quitting`.
+  win.on('close', (e) => {
+    if (quitting) return
+    e.preventDefault()
+    win.hide()
+  })
+
   const tick = () => {
     if (!win || win.isDestroyed()) return
     try {
       const data = getUsage(config)
       win.webContents.send('usage', data)
       checkAlerts(config, data)
+      updateTrayIcon(data.active)
     } catch (err) {
       win.webContents.send('usage-error', String(err))
     }
@@ -274,7 +342,9 @@ ipcMain.on('save-config', (_e, patch) => {
   applyLockPosition()
 })
 
-ipcMain.on('quit', () => app.quit())
+ipcMain.on('hide-window', () => {
+  if (win && !win.isDestroyed()) win.hide()
+})
 
 // Respeita a escolha da pessoa em vez de re-registrar a cada abertura.
 // Padrao ligado (config.startWithWindows), mas desmarcar realmente desliga.
@@ -289,7 +359,12 @@ function applyAutoStart() {
 app.whenReady().then(() => {
   if (process.platform === 'win32') app.setAppUserModelId('com.datasystem.claude-glass')
   createWindow() // define `config`
+  createTray()
   applyAutoStart()
+})
+
+app.on('before-quit', () => {
+  quitting = true
 })
 
 app.on('window-all-closed', () => {
