@@ -83,6 +83,35 @@ const SPRITE = [
   '.#.#..#.#.',
 ]
 
+// Badge de status no canto inferior direito, mesma linguagem do icone do
+// app (assets/icon.ico, conceito "Status"): quadrado solido com borda
+// escura pra garantir contraste em qualquer tema de barra de tarefas.
+// Verde = Claude Code ativo agora; cinza-mudo = parado.
+function desenharBadge(buf, size, corBadge) {
+  const BORDA = '#1b140f'
+  const [bR, bG, bB] = hexToRgb(BORDA)
+  const [cR, cG, cB] = hexToRgb(corBadge)
+  const badge = Math.round(size * 0.34)
+  const borda = Math.max(1, Math.round(size * 0.06))
+  const margem = Math.round(size * 0.02)
+  const x0 = size - badge - margem
+  const y0 = size - badge - margem
+
+  const pintar = (x, y, w, h, r, g, b) => {
+    for (let yy = Math.max(0, y); yy < Math.min(size, y + h); yy++) {
+      for (let xx = Math.max(0, x); xx < Math.min(size, x + w); xx++) {
+        const i = (yy * size + xx) * 4
+        buf[i] = r
+        buf[i + 1] = g
+        buf[i + 2] = b
+        buf[i + 3] = 255
+      }
+    }
+  }
+  pintar(x0 - borda, y0 - borda, badge + borda * 2, badge + borda * 2, bR, bG, bB)
+  pintar(x0, y0, badge, badge, cR, cG, cB)
+}
+
 function desenharPet(size, corCorpo, corOlho) {
   const [br, bg, bb] = hexToRgb(corCorpo)
   const [er, eg, eb] = hexToRgb(corOlho)
@@ -123,6 +152,11 @@ function main() {
   // `body.state-sleeping #body rect` usa quando o pet esta dormindo.
   const trabalhando = desenharPet(SIZE, '#d57658', '#221b16')
   const parado = desenharPet(SIZE, '#a87e63', '#221b16')
+
+  // badge de status, mesmo par de cores do icone do app (verde ativo /
+  // cinza-mudo parado)
+  desenharBadge(trabalhando, SIZE, '#7ec77d')
+  desenharBadge(parado, SIZE, '#6b6259')
 
   const caminhoTrabalhando = path.join(ASSETS_DIR, 'tray-working.png')
   const caminhoParado = path.join(ASSETS_DIR, 'tray-idle.png')

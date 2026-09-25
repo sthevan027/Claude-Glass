@@ -1,6 +1,6 @@
 {
   "name": "claude-glass",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Glassmorphism desktop widget for monitoring Claude usage on Windows",
   "main": "main.js",
   "scripts": {
@@ -32,7 +32,8 @@
       "assets/**"
     ],
     "win": {
-      "target": "zip"
+      "target": "zip",
+      "icon": "assets/icon.ico"
     }
   }
 }
